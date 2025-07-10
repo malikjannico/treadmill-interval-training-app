@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interval Training Runner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .speed-toggle-active {
+            background-color: #1e40af; /* dark blue */
+            color: white;
+        }
+        .color-option.selected {
+            ring: 2px;
+            ring-offset-2;
+            ring-blue-500;
+        }
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #c7d2fe;
+        }
+        .sortable-drag {
+            opacity: 1 !important;
+        }
+        /* WCAG Focus States */
+        button:focus-visible, input:focus-visible, [tabindex="0"]:focus-visible {
+            outline: 3px solid #3b82f6;
+            outline-offset: 2px;
+            border-radius: 0.25rem;
+        }
+        /* For the upcoming intervals list */
+        .timeline-list-item.is-current {
+            background-color: #dbeafe; /* blue-100 */
+            transform: scale(1.02);
+            font-weight: 700;
+        }
+        .timeline-list-item.is-completed {
+            opacity: 0.5;
+        }
+        .input-group {
+            position: relative;
+        }
+        .input-group svg {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+        .input-group input {
+            padding-left: 2.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <main id="app-container" class="max-w-4xl mx-auto p-4 md:p-6">
+        
+        <!-- Setup and Creation View -->
+        <div id="setup-view">
+            <header class="mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">Interval Training Creator</h1>
+                <p class="text-gray-600 mt-1">Build your custom running workout.</p>
+            </header>
+
+            <!-- User Settings -->
+            <section id="user-settings" class="mb-6 bg-white p-4 rounded-lg shadow-sm" aria-labelledby="settings-heading">
+                <h2 id="settings-heading" class="text-lg font-semibold mb-2">Settings</h2>
+                <div class="flex items-center">
+                    <label for="body-weight" class="font-medium mr-3">Your Body Weight (kg):</label>
+                    <input type="number" id="body-weight" value="70" class="w-24 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </section>
+
+            <!-- Interval Form -->
+            <section id="interval-form-section" class="mb-8 bg-white p-6 rounded-xl shadow-lg" aria-labelledby="interval-form-heading">
+                 <form id="interval-form" class="space-y-6">
+                    <h2 id="interval-form-heading" class="text-xl font-bold text-gray-800">Add New Interval</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="interval-title" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                            <div class="input-group">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" /></svg>
+                                <input type="text" id="interval-title" placeholder="e.g. Warm-up" class="block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="interval-duration" class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                            <div class="input-group">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                                <input type="text" id="interval-duration" placeholder="mm:ss" class="block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="interval-speed" class="block text-sm font-medium text-gray-700 mb-1">Speed</label>
+                            <div class="input-group">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                <input type="text" id="interval-speed" placeholder="mm:ss" class="block w-full p-3 border border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <div id="speed-unit-toggle" class="flex items-center absolute right-0 top-0 bottom-0">
+                                    <button type="button" data-unit="min/km" class="speed-toggle-active h-full px-3 py-2 border border-gray-300 text-sm">min/km</button>
+                                    <button type="button" data-unit="km/h" class="h-full px-3 py-2 border border-t-gray-300 border-b-gray-300 border-r-gray-300 rounded-r-md text-sm">km/h</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <label class="text-sm font-medium text-gray-700">Color:</label>
+                            <div id="color-selector" class="flex space-x-3">
+                                <div class="color-option w-8 h-8 rounded-full bg-blue-400 cursor-pointer selected" data-color="bg-blue-400" tabindex="0" aria-label="Select blue color"></div>
+                                <div class="color-option w-8 h-8 rounded-full bg-green-400 cursor-pointer" data-color="bg-green-400" tabindex="0" aria-label="Select green color"></div>
+                                <div class="color-option w-8 h-8 rounded-full bg-yellow-400 cursor-pointer" data-color="bg-yellow-400" tabindex="0" aria-label="Select yellow color"></div>
+                                <div class="color-option w-8 h-8 rounded-full bg-red-400 cursor-pointer" data-color="bg-red-400" tabindex="0" aria-label="Select red color"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" id="add-interval-btn" class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">Add Interval</button>
+                    </div>
+                </form>
+            </section>
+            
+            <!-- Training Visualization -->
+            <section id="training-plan" class="mb-6" aria-labelledby="plan-heading">
+                <h2 id="plan-heading" class="text-xl font-bold mb-3">Your Training Plan</h2>
+                <div id="block-view-wrapper" class="bg-white p-4 rounded-lg shadow-sm mb-4">
+                    <div id="block-view" class="h-48 flex items-end w-full border-b-2 border-gray-200">
+                        <!-- Interval blocks will be injected here -->
+                    </div>
+                    <div class="mt-4 flex flex-col sm:flex-row justify-between items-center text-sm font-medium text-gray-600 gap-4">
+                        <span>Total Duration: <span id="total-duration" class="font-bold text-gray-800">00:00</span></span>
+                        <div class="flex items-center space-x-2">
+                             <button id="group-btn" class="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm font-semibold rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Group Selected</button>
+                             <button id="start-training-btn" class="px-6 py-3 bg-green-500 text-white font-bold rounded-lg shadow-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-300" disabled>Start Training</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="list-view" class="space-y-3">
+                    <!-- Interval list items will be injected here -->
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Training Execution View -->
+        <div id="training-view" class="hidden">
+            <div class="text-center p-4 sm:p-6 bg-white rounded-xl shadow-lg">
+                <div class="mb-4" aria-live="polite">
+                    <p id="current-interval-title" class="text-2xl font-bold text-blue-600">Warm-up</p>
+                    <p id="current-interval-timer" class="text-6xl sm:text-8xl font-bold tracking-tighter text-gray-900">05:00</p>
+                    
+                    <div class="mt-2 grid grid-cols-2 gap-4 max-w-xs mx-auto">
+                        <div class="bg-gray-100 p-3 rounded-lg">
+                            <p class="text-sm font-medium text-gray-500">PACE</p>
+                            <p id="current-pace-minkm" class="text-2xl font-bold text-gray-800">5:30</p>
+                             <p class="text-xs text-gray-500">min/km</p>
+                        </div>
+                        <div class="bg-gray-100 p-3 rounded-lg">
+                            <p class="text-sm font-medium text-gray-500">SPEED</p>
+                            <p id="current-speed-kmh" class="text-2xl font-bold text-gray-800">10.9</p>
+                             <p class="text-xs text-gray-500">km/h</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="upcoming-intervals-container" class="my-6 max-h-48 overflow-y-auto rounded-lg bg-gray-50 p-2 space-y-2">
+                    <!-- Timeline items will be injected here -->
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-lg mb-6">
+                    <div class="text-left">
+                        <p class="text-gray-500">Total Time</p>
+                        <p id="total-training-time" class="font-bold text-2xl">00:00:00</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-gray-500">Calories</p>
+                        <p id="calories-burned" class="font-bold text-2xl">0 kcal</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center items-center space-x-4">
+                    <button id="pause-resume-btn" class="px-8 py-3 bg-yellow-500 text-white font-bold rounded-lg shadow-lg hover:bg-yellow-600">Pause</button>
+                    <button id="stop-btn" class="px-8 py-3 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700">Stop</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Repetition Modal -->
+    <div id="repetition-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <h3 class="text-lg font-medium mb-4">Set Repetitions</h3>
+            <label for="repetition-input" class="block text-sm font-medium text-gray-700">How many times to repeat this group?</label>
+            <input type="number" id="repetition-input" value="2" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="cancel-repetition-btn" type="button" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+                <button id="confirm-repetition-btn" type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Interval Modal -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-2xl mx-4">
+            <form id="edit-interval-form" class="space-y-6">
+                <h3 class="text-xl font-bold text-gray-800">Edit Interval</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="edit-interval-title" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <div class="input-group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" /></svg>
+                            <input type="text" id="edit-interval-title" placeholder="e.g., Cool-down" class="block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="edit-interval-duration" class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                        <div class="input-group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                            <input type="text" id="edit-interval-duration" placeholder="mm:ss" class="block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="edit-interval-speed" class="block text-sm font-medium text-gray-700 mb-1">Speed</label>
+                        <div class="input-group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                            <input type="text" id="edit-interval-speed" placeholder="mm:ss" class="block w-full p-3 border border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                             <div id="edit-speed-unit-toggle" class="flex items-center absolute right-0 top-0 bottom-0">
+                                <button type="button" data-unit="min/km" class="speed-toggle-active h-full px-3 py-2 border border-gray-300 text-sm">min/km</button>
+                                <button type="button" data-unit="km/h" class="h-full px-3 py-2 border border-t-gray-300 border-b-gray-300 border-r-gray-300 rounded-r-md text-sm">km/h</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label class="text-sm font-medium text-gray-700">Color:</label>
+                        <div id="edit-color-selector" class="flex space-x-3">
+                            <!-- Color options will be dynamically cloned here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3 pt-2">
+                    <button id="cancel-edit-btn" type="button" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+                    <button id="save-edit-btn" type="submit" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- STATE MANAGEMENT ---
+            let trainingPlan = []; // Array of interval/group objects
+            let editingId = null; // ID of the interval being edited
+            let speedUnit = 'min/km'; // 'min/km' or 'km/h'
+            let editSpeedUnit = 'min/km';
+            
+            // Training state
+            let trainingState = {
+                isRunning: false,
+                isPaused: false,
+                flattenedPlan: [],
+                currentIndex: 0,
+                timeInCurrentInterval: 0,
+                totalTimeElapsed: 0,
+                timerIntervalId: null,
+            };
+
+            // --- DOM ELEMENTS ---
+            const setupView = document.getElementById('setup-view');
+            const trainingView = document.getElementById('training-view');
+            const intervalForm = document.getElementById('interval-form');
+            const titleInput = document.getElementById('interval-title');
+            const durationInput = document.getElementById('interval-duration');
+            const speedInput = document.getElementById('interval-speed');
+            const speedUnitToggle = document.getElementById('speed-unit-toggle');
+            const colorSelector = document.getElementById('color-selector');
+            const addBtn = document.getElementById('add-interval-btn');
+            const blockView = document.getElementById('block-view');
+            const listView = document.getElementById('list-view');
+            const totalDurationEl = document.getElementById('total-duration');
+            const startBtn = document.getElementById('start-training-btn');
+            const groupBtn = document.getElementById('group-btn');
+            const bodyWeightInput = document.getElementById('body-weight');
+
+            // Training View Elements
+            const currentIntervalTitleEl = document.getElementById('current-interval-title');
+            const currentIntervalTimerEl = document.getElementById('current-interval-timer');
+            const currentPaceMinKmEl = document.getElementById('current-pace-minkm');
+            const currentSpeedKmhEl = document.getElementById('current-speed-kmh');
+            const upcomingIntervalsContainer = document.getElementById('upcoming-intervals-container');
+            const totalTrainingTimeEl = document.getElementById('total-training-time');
+            const caloriesBurnedEl = document.getElementById('calories-burned');
+            const pauseResumeBtn = document.getElementById('pause-resume-btn');
+            const stopBtn = document.getElementById('stop-btn');
+
+            // Repetition Modal Elements
+            const repetitionModal = document.getElementById('repetition-modal');
+            const repetitionInput = document.getElementById('repetition-input');
+            const confirmRepetitionBtn = document.getElementById('confirm-repetition-btn');
+            const cancelRepetitionBtn = document.getElementById('cancel-repetition-btn');
+
+            // Edit Modal Elements
+            const editModal = document.getElementById('edit-modal');
+            const editIntervalForm = document.getElementById('edit-interval-form');
+            const editTitleInput = document.getElementById('edit-interval-title');
+            const editDurationInput = document.getElementById('edit-interval-duration');
+            const editSpeedInput = document.getElementById('edit-interval-speed');
+            const editSpeedUnitToggle = document.getElementById('edit-speed-unit-toggle');
+            const editColorSelector = document.getElementById('edit-color-selector');
+            const saveEditBtn = document.getElementById('save-edit-btn');
+            const cancelEditBtn = document.getElementById('cancel-edit-btn');
+
+            // --- UTILITY FUNCTIONS ---
+            const generateId = () => `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const secs = (seconds % 60).toString().padStart(2, '0');
+                return `${mins}:${secs}`;
+            };
+            const parseDuration = (mm_ss) => {
+                const parts = mm_ss.split(':').map(Number);
+                if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) return 0;
+                return parts[0] * 60 + parts[1];
+            };
+            const toMs = (value, unit) => {
+                if (!value) return 0;
+                if (unit === 'km/h') {
+                    return parseFloat(value) / 3.6;
+                }
+                if (unit === 'min/km') {
+                    const totalSeconds = parseDuration(value);
+                    if (totalSeconds === 0) return 0;
+                    return 1000 / totalSeconds;
+                }
+                return 0;
+            };
+            const fromMs = (ms, unit) => {
+                if (ms === 0) return unit === 'min/km' ? '00:00' : '0.0';
+                if (unit === 'km/h') {
+                    return (ms * 3.6).toFixed(1);
+                }
+                if (unit === 'min/km') {
+                    const secondsPerKm = 1000 / ms;
+                    return formatTime(Math.round(secondsPerKm));
+                }
+                return '';
+            };
+            const getMET = (speedMs) => {
+                const kmh = speedMs * 3.6;
+                if (kmh < 4) return 2.8; if (kmh < 6) return 4.5; if (kmh < 8) return 6.0; if (kmh < 10) return 9.8; if (kmh < 12) return 11.0; if (kmh < 14) return 11.8;
+                return 12.8;
+            };
+            const calculateCalories = (speedMs, weightKg, durationS) => {
+                const met = getMET(speedMs);
+                const hours = durationS / 3600;
+                return met * weightKg * hours;
+            };
+
+            // --- RENDER FUNCTIONS ---
+            const renderPlan = () => {
+                blockView.innerHTML = '';
+                listView.innerHTML = '';
+                
+                let totalSeconds = 0;
+                const speeds = [];
+
+                const getPlanItems = (plan) => {
+                    let items = [];
+                    plan.forEach(item => {
+                        if (item.type === 'group') {
+                            for(let i = 0; i < item.repetitions; i++) {
+                                items.push(...item.intervals);
+                            }
+                        } else {
+                            items.push(item);
+                        }
+                    });
+                    return items;
+                };
+
+                const flattenedForRender = getPlanItems(trainingPlan);
+
+                flattenedForRender.forEach(interval => {
+                    totalSeconds += interval.duration;
+                    if (interval.speed > 0) speeds.push(interval.speed);
+                });
+
+                totalDurationEl.textContent = formatTime(totalSeconds);
+                startBtn.disabled = trainingPlan.length === 0;
+
+                const minSpeed = speeds.length > 0 ? Math.min(...speeds) : 0;
+                const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : 1;
+                const speedRange = maxSpeed - minSpeed;
+
+                flattenedForRender.forEach(interval => {
+                    const block = document.createElement('div');
+                    const widthPercentage = totalSeconds > 0 ? (interval.duration / totalSeconds) * 100 : 0;
+                    let heightPercentage = 30;
+                    if (speedRange > 0) {
+                        heightPercentage = 30 + ((interval.speed - minSpeed) / speedRange) * 65;
+                    } else if (speeds.length > 0) {
+                        heightPercentage = 65;
+                    }
+                    block.className = `transition-all duration-300 ${interval.color}`;
+                    block.style.width = `${widthPercentage}%`;
+                    block.style.height = `${heightPercentage}%`;
+                    block.setAttribute('aria-label', `${interval.title}: ${formatTime(interval.duration)} at ${fromMs(interval.speed, 'min/km')} min/km`);
+                    blockView.appendChild(block);
+                });
+                
+                const renderListItem = (item, parentElement, isGrouped = false) => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = `flex items-center p-3 rounded-lg shadow-sm transition-all ${isGrouped ? 'bg-gray-100 ml-6' : 'bg-white'}`;
+                    itemEl.dataset.id = item.id;
+                    const colorIndicator = `<div class="w-3 h-10 rounded-full ${item.color} mr-4 flex-shrink-0"></div>`;
+                    const checkbox = `<div class="mr-4 flex-shrink-0"><input type="checkbox" class="item-checkbox h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" data-id="${item.id}" ${isGrouped ? 'disabled' : ''}></div>`;
+                    const details = `<div class="flex-grow"><p class="font-bold text-gray-800">${item.title || 'Untitled'}</p><p class="text-sm text-gray-500">${formatTime(item.duration)} | ${fromMs(item.speed, 'min/km')} min/km | ${fromMs(item.speed, 'km/h')} km/h</p></div>`;
+                    const actions = `<div class="flex items-center space-x-2 flex-shrink-0"><button class="edit-btn p-2 rounded-full hover:bg-gray-200" aria-label="Edit interval ${item.title}" data-id="${item.id}"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button class="copy-btn p-2 rounded-full hover:bg-gray-200" aria-label="Copy interval ${item.title}" data-id="${item.id}"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z" /><path d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2h2a1 1 0 100-2H5V5h6v2a1 1 0 102 0V5a2 2 0 00-2-2H5z" /></svg></button><button class="delete-btn p-2 rounded-full hover:bg-gray-200" aria-label="Delete interval ${item.title}" data-id="${item.id}"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button></div>`;
+                    itemEl.innerHTML = checkbox + colorIndicator + details + actions;
+                    parentElement.appendChild(itemEl);
+                };
+
+                const renderGroupItem = (group, parentElement) => {
+                    const groupContainer = document.createElement('div');
+                    groupContainer.className = 'bg-white p-3 rounded-lg shadow-sm space-y-2';
+                    groupContainer.dataset.id = group.id;
+                    groupContainer.dataset.type = 'group';
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'flex items-center';
+                    const checkbox = `<div class="mr-4 flex-shrink-0"><input type="checkbox" class="item-checkbox h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" data-id="${group.id}"></div>`;
+                    const groupTitle = `<div class="flex-grow"><p class="font-extrabold text-lg text-blue-700">${group.repetitions} x</p></div>`;
+                    const groupActions = `<div class="flex items-center space-x-2 flex-shrink-0"><button class="ungroup-btn p-2 rounded-full hover:bg-gray-200" aria-label="Ungroup this set" data-id="${group.id}"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg></button><button class="delete-btn p-2 rounded-full hover:bg-gray-200" aria-label="Delete this group" data-id="${group.id}"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button></div>`;
+                    groupHeader.innerHTML = checkbox + groupTitle + groupActions;
+                    groupContainer.appendChild(groupHeader);
+                    const sublist = document.createElement('div');
+                    sublist.className = 'space-y-2';
+                    group.intervals.forEach(interval => renderListItem(interval, sublist, true));
+                    groupContainer.appendChild(sublist);
+                    parentElement.appendChild(groupContainer);
+                };
+
+                trainingPlan.forEach(item => {
+                    if (item.type === 'group') {
+                        renderGroupItem(item, listView);
+                    } else {
+                        renderListItem(item, listView);
+                    }
+                });
+                
+                new Sortable(listView, { animation: 150, ghostClass: 'sortable-ghost', onEnd: (evt) => {
+                        const [movedItem] = trainingPlan.splice(evt.oldIndex, 1);
+                        trainingPlan.splice(evt.newIndex, 0, movedItem);
+                        renderPlan();
+                    }
+                });
+                updateGroupButtonState();
+            };
+            
+            // --- EVENT HANDLERS ---
+            intervalForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newInterval = { id: generateId(), title: titleInput.value.trim(), duration: parseDuration(durationInput.value), speed: toMs(speedInput.value, speedUnit), color: document.querySelector('#color-selector .selected').dataset.color, type: 'interval' };
+                if (newInterval.duration === 0 || newInterval.speed === 0) {
+                    alert('Please enter valid duration (mm:ss) and speed.');
+                    return;
+                }
+                trainingPlan.push(newInterval);
+                intervalForm.reset();
+                titleInput.focus();
+                renderPlan();
+            });
+
+            const handleSpeedToggle = (inputEl, unitVar, toggleEl, event) => {
+                const newUnit = event.target.dataset.unit;
+                if (unitVar.unit === newUnit) return;
+                
+                const currentValue = inputEl.value;
+                if (currentValue) {
+                    const speedInMs = toMs(currentValue, unitVar.unit);
+                    inputEl.value = fromMs(speedInMs, newUnit);
+                }
+                
+                unitVar.unit = newUnit;
+                inputEl.placeholder = newUnit === 'min/km' ? 'mm:ss' : '10.5';
+
+                toggleEl.querySelectorAll('button').forEach(btn => btn.classList.remove('speed-toggle-active'));
+                event.target.classList.add('speed-toggle-active');
+            };
+
+            speedUnitToggle.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') return;
+                handleSpeedToggle(speedInput, { get unit() { return speedUnit; }, set unit(v) { speedUnit = v; } }, speedUnitToggle, e);
+            });
+
+            editSpeedUnitToggle.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') return;
+                handleSpeedToggle(editSpeedInput, { get unit() { return editSpeedUnit; }, set unit(v) { editSpeedUnit = v; } }, editSpeedUnitToggle, e);
+            });
+
+            const handleColorSelection = (selector) => (e) => {
+                if (e.target.classList.contains('color-option')) {
+                    selector.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected', 'ring-2', 'ring-offset-2', 'ring-blue-500'));
+                    e.target.classList.add('selected', 'ring-2', 'ring-offset-2', 'ring-blue-500');
+                }
+            };
+            colorSelector.addEventListener('click', handleColorSelection(colorSelector));
+            editColorSelector.addEventListener('click', handleColorSelection(editColorSelector));
+
+            listView.addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                const id = button.dataset.id;
+                
+                if (button.classList.contains('edit-btn')) {
+                    const findItem = (plan) => {
+                        for (const item of plan) {
+                            if (item.id === id) return item;
+                            if (item.type === 'group') {
+                                const found = findItem(item.intervals);
+                                if (found) return found;
+                            }
+                        }
+                        return null;
+                    };
+                    const interval = findItem(trainingPlan);
+                    if (interval) {
+                        editingId = id;
+                        editTitleInput.value = interval.title;
+                        editDurationInput.value = formatTime(interval.duration);
+                        
+                        // Reset and set speed unit and placeholder for modal
+                        editSpeedUnit = 'min/km';
+                        editSpeedUnitToggle.querySelector('[data-unit="min/km"]').classList.add('speed-toggle-active');
+                        editSpeedUnitToggle.querySelector('[data-unit="km/h"]').classList.remove('speed-toggle-active');
+                        editSpeedInput.value = fromMs(interval.speed, editSpeedUnit);
+                        editSpeedInput.placeholder = 'mm:ss';
+
+                        editColorSelector.innerHTML = '';
+                        colorSelector.querySelectorAll('.color-option').forEach(opt => {
+                             const clone = opt.cloneNode(true);
+                             clone.classList.remove('selected', 'ring-2', 'ring-offset-2', 'ring-blue-500');
+                             if (clone.dataset.color === interval.color) {
+                                 clone.classList.add('selected', 'ring-2', 'ring-offset-2', 'ring-blue-500');
+                             }
+                             editColorSelector.appendChild(clone);
+                        });
+                        editModal.classList.remove('hidden');
+                        editTitleInput.focus();
+                    }
+                } else if (button.classList.contains('copy-btn')) {
+                    let sourceIndex = -1, sourceItem = null;
+                    const findAndCopy = (plan) => {
+                        for (let i = 0; i < plan.length; i++) {
+                            if (plan[i].id === id) { sourceIndex = i; sourceItem = plan[i]; return plan; }
+                            if (plan[i].type === 'group') { const foundPlan = findAndCopy(plan[i].intervals); if (foundPlan) return foundPlan; }
+                        }
+                        return null;
+                    };
+                    const parentArray = findAndCopy(trainingPlan);
+                    if (parentArray && sourceItem) {
+                        parentArray.splice(sourceIndex + 1, 0, { ...sourceItem, id: generateId() });
+                        renderPlan();
+                    }
+                } else if (button.classList.contains('delete-btn')) {
+                     const deleteItem = (plan) => {
+                        const index = plan.findIndex(item => item.id === id);
+                        if (index > -1) { plan.splice(index, 1); return true; }
+                        for (const item of plan) { if (item.type === 'group') { if (deleteItem(item.intervals)) return true; } }
+                        return false;
+                    };
+                    deleteItem(trainingPlan);
+                    renderPlan();
+                } else if (button.classList.contains('ungroup-btn')) {
+                    const groupIndex = trainingPlan.findIndex(g => g.id === id);
+                    if (groupIndex > -1) {
+                        const group = trainingPlan[groupIndex];
+                        trainingPlan.splice(groupIndex, 1, ...group.intervals);
+                        renderPlan();
+                    }
+                }
+            });
+
+            listView.addEventListener('change', (e) => {
+                if (e.target.matches('.item-checkbox')) updateGroupButtonState();
+            });
+            const updateGroupButtonState = () => {
+                groupBtn.disabled = listView.querySelectorAll('.item-checkbox:checked:not(:disabled)').length < 2;
+            };
+
+            groupBtn.addEventListener('click', () => {
+                repetitionModal.classList.remove('hidden');
+                repetitionInput.focus();
+            });
+            cancelRepetitionBtn.addEventListener('click', () => repetitionModal.classList.add('hidden'));
+            confirmRepetitionBtn.addEventListener('click', () => {
+                const repetitions = parseInt(repetitionInput.value, 10);
+                if (isNaN(repetitions) || repetitions < 1) { repetitionModal.classList.add('hidden'); return; }
+                const selectedIds = Array.from(listView.querySelectorAll('.item-checkbox:checked:not(:disabled)')).map(cb => cb.dataset.id);
+                if (selectedIds.length < 2) { repetitionModal.classList.add('hidden'); return; }
+                const newGroup = { id: generateId(), type: 'group', repetitions: repetitions, intervals: [] };
+                let firstGroupIndex = -1;
+                trainingPlan.forEach((item, index) => {
+                    if (selectedIds.includes(item.id)) {
+                        newGroup.intervals.push(item);
+                        if (firstGroupIndex === -1) firstGroupIndex = index;
+                    }
+                });
+                const planWithoutGroupedItems = trainingPlan.filter(item => !selectedIds.includes(item.id));
+                if (firstGroupIndex !== -1) planWithoutGroupedItems.splice(firstGroupIndex, 0, newGroup);
+                trainingPlan = planWithoutGroupedItems;
+                repetitionModal.classList.add('hidden');
+                renderPlan();
+            });
+
+            // Edit Modal Logic
+            cancelEditBtn.addEventListener('click', () => editModal.classList.add('hidden'));
+            editIntervalForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newTitle = editTitleInput.value.trim();
+                const newDuration = parseDuration(editDurationInput.value);
+                const newSpeed = toMs(editSpeedInput.value, editSpeedUnit);
+                const newColor = editColorSelector.querySelector('.selected').dataset.color;
+
+                if (newDuration === 0 || newSpeed === 0) {
+                    alert('Please enter valid duration and speed.');
+                    return;
+                }
+
+                const updateItem = (plan) => {
+                    for (let i = 0; i < plan.length; i++) {
+                        if (plan[i].id === editingId) {
+                            plan[i] = { ...plan[i], title: newTitle, duration: newDuration, speed: newSpeed, color: newColor };
+                            return true;
+                        }
+                        if (plan[i].type === 'group' && updateItem(plan[i].intervals)) return true;
+                    }
+                    return false;
+                };
+
+                updateItem(trainingPlan);
+                editModal.classList.add('hidden');
+                editingId = null;
+                renderPlan();
+            });
+
+            // --- TRAINING LOGIC ---
+            startBtn.addEventListener('click', () => {
+                if (trainingPlan.length === 0) return;
+                trainingState.flattenedPlan = [];
+                trainingPlan.forEach(item => {
+                    if (item.type === 'group') {
+                        for (let i = 0; i < item.repetitions; i++) {
+                            const uniqueIntervals = item.intervals.map(iv => ({...iv, timelineId: `${iv.id}_rep${i}`}));
+                            trainingState.flattenedPlan.push(...uniqueIntervals);
+                        }
+                    } else {
+                        trainingState.flattenedPlan.push({...item, timelineId: item.id});
+                    }
+                });
+                Object.assign(trainingState, { isRunning: true, isPaused: false, currentIndex: 0, timeInCurrentInterval: 0, totalTimeElapsed: 0 });
+                setupView.classList.add('hidden');
+                trainingView.classList.remove('hidden');
+                renderUpcomingIntervals();
+                updateTrainingDisplay();
+                startTimer();
+            });
+            pauseResumeBtn.addEventListener('click', () => {
+                if (trainingState.isRunning) { trainingState.isPaused ? resumeTimer() : pauseTimer(); }
+            });
+            stopBtn.addEventListener('click', () => {
+                stopTimer();
+                setupView.classList.remove('hidden');
+                trainingView.classList.add('hidden');
+            });
+            const startTimer = () => {
+                trainingState.isPaused = false;
+                pauseResumeBtn.textContent = 'Pause';
+                pauseResumeBtn.classList.replace('bg-green-500', 'bg-yellow-500');
+                trainingState.timerIntervalId = setInterval(tick, 1000);
+            };
+            const pauseTimer = () => {
+                trainingState.isPaused = true;
+                clearInterval(trainingState.timerIntervalId);
+                pauseResumeBtn.textContent = 'Resume';
+                pauseResumeBtn.classList.replace('bg-yellow-500', 'bg-green-500');
+            };
+            const resumeTimer = () => startTimer();
+            const stopTimer = () => {
+                trainingState.isRunning = false;
+                clearInterval(trainingState.timerIntervalId);
+            };
+            const tick = () => {
+                if (!trainingState.isRunning || trainingState.isPaused) return;
+                trainingState.totalTimeElapsed++;
+                trainingState.timeInCurrentInterval++;
+                const currentInterval = trainingState.flattenedPlan[trainingState.currentIndex];
+                if (trainingState.timeInCurrentInterval >= currentInterval.duration) {
+                    trainingState.currentIndex++;
+                    trainingState.timeInCurrentInterval = 0;
+                    if (trainingState.currentIndex >= trainingState.flattenedPlan.length) {
+                        stopTimer();
+                        updateTrainingDisplay(); 
+                        return;
+                    }
+                }
+                updateTrainingDisplay();
+            };
+            const renderUpcomingIntervals = () => {
+                upcomingIntervalsContainer.innerHTML = '';
+                trainingState.flattenedPlan.forEach((interval) => {
+                    const itemEl = document.createElement('div');
+                    itemEl.dataset.timelineId = interval.timelineId;
+                    itemEl.className = 'timeline-list-item flex items-center justify-between p-2 rounded-md transition-all duration-300';
+                    const icon = `<div class="w-3 h-3 rounded-full ${interval.color} mr-3"></div>`;
+                    const title = `<span class="flex-grow text-left">${interval.title || 'Untitled'}</span>`;
+                    const duration = `<span>${formatTime(interval.duration)}</span>`;
+                    const checkmark = `<div class="checkmark-placeholder w-5 h-5 ml-3"></div>`;
+                    itemEl.innerHTML = `<div class="flex items-center">${icon}${title}</div><div class="flex items-center">${duration}${checkmark}</div>`;
+                    upcomingIntervalsContainer.appendChild(itemEl);
+                });
+            };
+            const updateTrainingDisplay = () => {
+                document.querySelectorAll('.timeline-list-item').forEach((el, index) => {
+                    el.classList.remove('is-current', 'is-completed');
+                    const checkmarkEl = el.querySelector('.checkmark-placeholder');
+                    checkmarkEl.innerHTML = '';
+                    if (index < trainingState.currentIndex) {
+                        el.classList.add('is-completed');
+                        checkmarkEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>`;
+                    } else if (index === trainingState.currentIndex) {
+                        el.classList.add('is-current');
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+
+                if (trainingState.currentIndex >= trainingState.flattenedPlan.length) {
+                    currentIntervalTitleEl.textContent = "Workout Complete!";
+                    currentIntervalTimerEl.textContent = "00:00";
+                    currentPaceMinKmEl.textContent = "-";
+                    currentSpeedKmhEl.textContent = "-";
+                    pauseResumeBtn.disabled = true;
+                    pauseResumeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    stopBtn.textContent = "Finish";
+                } else {
+                    const currentInterval = trainingState.flattenedPlan[trainingState.currentIndex];
+                    const remainingInInterval = currentInterval.duration - trainingState.timeInCurrentInterval;
+                    currentIntervalTitleEl.textContent = currentInterval.title || 'Interval';
+                    currentIntervalTimerEl.textContent = formatTime(remainingInInterval);
+                    currentPaceMinKmEl.textContent = fromMs(currentInterval.speed, 'min/km');
+                    currentSpeedKmhEl.textContent = fromMs(currentInterval.speed, 'km/h');
+                }
+
+                const totalHours = Math.floor(trainingState.totalTimeElapsed / 3600);
+                const totalMins = Math.floor((trainingState.totalTimeElapsed % 3600) / 60);
+                const totalSecs = trainingState.totalTimeElapsed % 60;
+                totalTrainingTimeEl.textContent = `${totalHours.toString().padStart(2, '0')}:${totalMins.toString().padStart(2, '0')}:${totalSecs.toString().padStart(2, '0')}`;
+
+                const weight = parseFloat(bodyWeightInput.value) || 70;
+                let totalCalories = 0;
+                for(let i = 0; i < trainingState.currentIndex; i++) {
+                    const interval = trainingState.flattenedPlan[i];
+                    totalCalories += calculateCalories(interval.speed, weight, interval.duration);
+                }
+                if(trainingState.currentIndex < trainingState.flattenedPlan.length) {
+                    const currentInterval = trainingState.flattenedPlan[trainingState.currentIndex];
+                    totalCalories += calculateCalories(currentInterval.speed, weight, trainingState.timeInCurrentInterval);
+                }
+                caloriesBurnedEl.textContent = `${Math.round(totalCalories)} kcal`;
+            };
+
+            // --- INITIALIZATION ---
+            renderPlan();
+        });
+    </script>
+</body>
+</html>
