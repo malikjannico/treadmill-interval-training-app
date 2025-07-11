@@ -28,7 +28,7 @@
             opacity: 1 !important;
         }
         /* WCAG Focus States */
-        button:focus-visible, input:focus-visible, [tabindex="0"]:focus-visible {
+        button:focus-visible, input:focus-visible, [tabindex="0"]:focus-visible, select:focus-visible {
             outline: 3px solid #3b82f6;
             outline-offset: 2px;
             border-radius: 0.25rem;
@@ -71,9 +71,15 @@
             <!-- User Settings -->
             <section id="user-settings" class="mb-6 bg-white p-4 rounded-lg shadow-sm" aria-labelledby="settings-heading">
                 <h2 id="settings-heading" class="text-lg font-semibold mb-2">Settings</h2>
-                <div class="flex items-center">
-                    <label for="body-weight" class="font-medium mr-3">Your Body Weight (kg):</label>
-                    <input type="number" id="body-weight" value="70" class="w-24 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <label for="body-weight" class="font-medium mr-3">Weight (kg):</label>
+                        <input type="number" id="body-weight" value="70" class="w-24 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="flex items-center">
+                         <label for="time-zone" class="font-medium mr-3">Time Zone:</label>
+                         <select id="time-zone" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></select>
+                    </div>
                 </div>
             </section>
 
@@ -86,7 +92,7 @@
                             <label for="interval-title" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
                             <div class="input-group">
                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" /></svg>
-                                <input type="text" id="interval-title" placeholder="e.g. Warm-up" class="block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <input type="text" id="interval-title" placeholder="e.g., Warm-up" class="block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                             </div>
                         </div>
                         <div>
@@ -188,6 +194,37 @@
                 </div>
             </div>
         </div>
+
+        <!-- Results View -->
+        <div id="results-view" class="hidden">
+            <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">Workout Complete!</h2>
+                <p class="text-gray-600 mb-6">Here's your summary.</p>
+                <div class="space-y-4 text-left max-w-md mx-auto">
+                    <div class="flex justify-between items-baseline p-3 bg-gray-50 rounded-lg">
+                        <span class="font-medium text-gray-600">Start Time:</span>
+                        <span id="result-start-time" class="font-bold text-lg text-gray-800"></span>
+                    </div>
+                    <div class="flex justify-between items-baseline p-3 bg-gray-50 rounded-lg">
+                        <span class="font-medium text-gray-600">End Time:</span>
+                        <span id="result-end-time" class="font-bold text-lg text-gray-800"></span>
+                    </div>
+                    <div class="flex justify-between items-baseline p-3 bg-gray-50 rounded-lg">
+                        <span class="font-medium text-gray-600">Total Duration:</span>
+                        <span id="result-duration" class="font-bold text-lg text-gray-800"></span>
+                    </div>
+                     <div class="flex justify-between items-baseline p-3 bg-gray-50 rounded-lg">
+                        <span class="font-medium text-gray-600">Distance Traveled:</span>
+                        <span id="result-distance" class="font-bold text-lg text-gray-800"></span>
+                    </div>
+                    <div class="flex justify-between items-baseline p-3 bg-gray-50 rounded-lg">
+                        <span class="font-medium text-gray-600">Calories Burned:</span>
+                        <span id="result-calories" class="font-bold text-lg text-gray-800"></span>
+                    </div>
+                </div>
+                <button id="done-btn" class="mt-8 w-full max-w-xs mx-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">Done</button>
+            </div>
+        </div>
     </main>
 
     <!-- Repetition Modal -->
@@ -267,24 +304,27 @@
                 timeInCurrentInterval: 0,
                 totalTimeElapsed: 0,
                 timerIntervalId: null,
+                startTime: null,
+                totalDistance: 0, // in meters
             };
 
             // --- DOM ELEMENTS ---
             const setupView = document.getElementById('setup-view');
             const trainingView = document.getElementById('training-view');
+            const resultsView = document.getElementById('results-view');
             const intervalForm = document.getElementById('interval-form');
             const titleInput = document.getElementById('interval-title');
             const durationInput = document.getElementById('interval-duration');
             const speedInput = document.getElementById('interval-speed');
             const speedUnitToggle = document.getElementById('speed-unit-toggle');
             const colorSelector = document.getElementById('color-selector');
-            const addBtn = document.getElementById('add-interval-btn');
             const blockView = document.getElementById('block-view');
             const listView = document.getElementById('list-view');
             const totalDurationEl = document.getElementById('total-duration');
             const startBtn = document.getElementById('start-training-btn');
             const groupBtn = document.getElementById('group-btn');
             const bodyWeightInput = document.getElementById('body-weight');
+            const timeZoneSelect = document.getElementById('time-zone');
 
             // Training View Elements
             const currentIntervalTitleEl = document.getElementById('current-interval-title');
@@ -296,6 +336,14 @@
             const caloriesBurnedEl = document.getElementById('calories-burned');
             const pauseResumeBtn = document.getElementById('pause-resume-btn');
             const stopBtn = document.getElementById('stop-btn');
+
+            // Results View Elements
+            const resultStartTimeEl = document.getElementById('result-start-time');
+            const resultEndTimeEl = document.getElementById('result-end-time');
+            const resultDurationEl = document.getElementById('result-duration');
+            const resultDistanceEl = document.getElementById('result-distance');
+            const resultCaloriesEl = document.getElementById('result-calories');
+            const doneBtn = document.getElementById('done-btn');
 
             // Repetition Modal Elements
             const repetitionModal = document.getElementById('repetition-modal');
@@ -311,15 +359,22 @@
             const editSpeedInput = document.getElementById('edit-interval-speed');
             const editSpeedUnitToggle = document.getElementById('edit-speed-unit-toggle');
             const editColorSelector = document.getElementById('edit-color-selector');
-            const saveEditBtn = document.getElementById('save-edit-btn');
             const cancelEditBtn = document.getElementById('cancel-edit-btn');
 
             // --- UTILITY FUNCTIONS ---
             const generateId = () => `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             const formatTime = (seconds) => {
-                const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-                const secs = (seconds % 60).toString().padStart(2, '0');
+                const totalSeconds = Math.round(seconds);
+                const mins = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+                const secs = (totalSeconds % 60).toString().padStart(2, '0');
                 return `${mins}:${secs}`;
+            };
+            const formatLongTime = (seconds) => {
+                const totalSeconds = Math.round(seconds);
+                const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+                const mins = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+                const secs = (totalSeconds % 60).toString().padStart(2, '0');
+                return `${hours}:${mins}:${secs}`;
             };
             const parseDuration = (mm_ss) => {
                 const parts = mm_ss.split(':').map(Number);
@@ -345,7 +400,7 @@
                 }
                 if (unit === 'min/km') {
                     const secondsPerKm = 1000 / ms;
-                    return formatTime(Math.round(secondsPerKm));
+                    return formatTime(secondsPerKm);
                 }
                 return '';
             };
@@ -532,7 +587,6 @@
                         editTitleInput.value = interval.title;
                         editDurationInput.value = formatTime(interval.duration);
                         
-                        // Reset and set speed unit and placeholder for modal
                         editSpeedUnit = 'min/km';
                         editSpeedUnitToggle.querySelector('[data-unit="min/km"]').classList.add('speed-toggle-active');
                         editSpeedUnitToggle.querySelector('[data-unit="km/h"]').classList.remove('speed-toggle-active');
@@ -661,7 +715,7 @@
                         trainingState.flattenedPlan.push({...item, timelineId: item.id});
                     }
                 });
-                Object.assign(trainingState, { isRunning: true, isPaused: false, currentIndex: 0, timeInCurrentInterval: 0, totalTimeElapsed: 0 });
+                Object.assign(trainingState, { isRunning: true, isPaused: false, currentIndex: 0, timeInCurrentInterval: 0, totalTimeElapsed: 0, startTime: new Date(), totalDistance: 0 });
                 setupView.classList.add('hidden');
                 trainingView.classList.remove('hidden');
                 renderUpcomingIntervals();
@@ -673,8 +727,7 @@
             });
             stopBtn.addEventListener('click', () => {
                 stopTimer();
-                setupView.classList.remove('hidden');
-                trainingView.classList.add('hidden');
+                showResultsPage();
             });
             const startTimer = () => {
                 trainingState.isPaused = false;
@@ -695,20 +748,44 @@
             };
             const tick = () => {
                 if (!trainingState.isRunning || trainingState.isPaused) return;
+                
+                const currentInterval = trainingState.flattenedPlan[trainingState.currentIndex];
                 trainingState.totalTimeElapsed++;
                 trainingState.timeInCurrentInterval++;
-                const currentInterval = trainingState.flattenedPlan[trainingState.currentIndex];
+                trainingState.totalDistance += currentInterval.speed; // speed is in m/s
+
                 if (trainingState.timeInCurrentInterval >= currentInterval.duration) {
                     trainingState.currentIndex++;
                     trainingState.timeInCurrentInterval = 0;
                     if (trainingState.currentIndex >= trainingState.flattenedPlan.length) {
                         stopTimer();
-                        updateTrainingDisplay(); 
+                        showResultsPage();
                         return;
                     }
                 }
                 updateTrainingDisplay();
             };
+
+            const showResultsPage = () => {
+                const endTime = new Date();
+                const selectedTimeZone = timeZoneSelect.value;
+                const timeFormatOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+
+                resultStartTimeEl.textContent = trainingState.startTime.toLocaleTimeString('en-US', { ...timeFormatOptions, timeZone: selectedTimeZone });
+                resultEndTimeEl.textContent = endTime.toLocaleTimeString('en-US', { ...timeFormatOptions, timeZone: selectedTimeZone });
+                resultDurationEl.textContent = formatLongTime(trainingState.totalTimeElapsed);
+                resultDistanceEl.textContent = `${(trainingState.totalDistance / 1000).toFixed(2)} km`;
+                resultCaloriesEl.textContent = `${caloriesBurnedEl.textContent}`;
+
+                trainingView.classList.add('hidden');
+                resultsView.classList.remove('hidden');
+            };
+
+            doneBtn.addEventListener('click', () => {
+                resultsView.classList.add('hidden');
+                setupView.classList.remove('hidden');
+            });
+
             const renderUpcomingIntervals = () => {
                 upcomingIntervalsContainer.innerHTML = '';
                 trainingState.flattenedPlan.forEach((interval) => {
@@ -754,10 +831,7 @@
                     currentSpeedKmhEl.textContent = fromMs(currentInterval.speed, 'km/h');
                 }
 
-                const totalHours = Math.floor(trainingState.totalTimeElapsed / 3600);
-                const totalMins = Math.floor((trainingState.totalTimeElapsed % 3600) / 60);
-                const totalSecs = trainingState.totalTimeElapsed % 60;
-                totalTrainingTimeEl.textContent = `${totalHours.toString().padStart(2, '0')}:${totalMins.toString().padStart(2, '0')}:${totalSecs.toString().padStart(2, '0')}`;
+                totalTrainingTimeEl.textContent = formatLongTime(trainingState.totalTimeElapsed);
 
                 const weight = parseFloat(bodyWeightInput.value) || 70;
                 let totalCalories = 0;
@@ -773,6 +847,24 @@
             };
 
             // --- INITIALIZATION ---
+            const populateTimezones = () => {
+                const timezones = [ "UTC", "Europe/London", "Europe/Berlin", "Europe/Moscow", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "Asia/Tokyo", "Australia/Sydney" ];
+                const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                if (!timezones.includes(userTimeZone)) {
+                    timezones.unshift(userTimeZone);
+                }
+                timezones.forEach(tz => {
+                    const option = document.createElement('option');
+                    option.value = tz;
+                    option.textContent = tz;
+                    if (tz === userTimeZone) {
+                        option.selected = true;
+                    }
+                    timeZoneSelect.appendChild(option);
+                });
+            };
+
+            populateTimezones();
             renderPlan();
         });
     </script>
